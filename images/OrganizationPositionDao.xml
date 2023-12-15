@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.microvideo.qsecurity.dao.OrganizationPositionDao">
+	<!-- 一些方法从positiondao拷贝来 杜静 20170623 -->
+	<!-- 缓存 eviction="LRU": 缓存策略 flushInterval="60000" ：创建LRU缓存让60秒就清空一次，以毫秒为单位 
+		size="512"： 存储512个对象结果或列表引用 readOnly="true"： 只读状态 -->
+	<!-- <cache eviction="LRU" flushInterval="60000" size="512" readOnly="true" /> -->
+ 	<cache type="org.mybatis.caches.redis.ClusterRedisCache"> 
+ 		<property name="relateDao" 
+ 			value="cn.microvideo.qsecurity.dao.RoleDao,cn.microvideo.qsecurity.dao.UserDao" />
+ 	</cache>
+	<!-- <cache type="org.mybatis.caches.redis.LoggingRedisCache" /> -->
+	<resultMap type="OrganizationPosition" id="organizationPositionMap">
+		<id property="id" column="ID" />
+		<result property="organizationId" column="ORGANIZATIONID" />
+		<result property="positionId" column="POSITIONID" />
+	</resultMap>
+	<resultMap type="UserOrgPosition" id="UserOrgPositionMap">
+		<id property="uniqueId" column="ID" jdbcType="VARCHAR" />
+		<result property="userUuid" column="UUID" jdbcType="VARCHAR" />
+		<result property="orgId" column="OID" jdbcType="VARCHAR" />
+		<result property="positionId" column="POSITIONID" jdbcType="VARCHAR" />
+	</resultMap>
+
+	<resultMap type="Position" id="PositionMap">
+		<id property="uniqueId" column="id" />
+		<result property="name" column="name" />
+		<result property="oid" column="oid" />
+		<result property="ouid" column="ouid" />
+		<result property="type" column="type" />
+		<result property="seq" column="seq" />
+		<result property="parent" column="parent" />
+		<result property="station" column="station" />
+		<result property="level" column="level" />
+		<result property="rank" column="rank" />
+		<result property="template" column="TEMPLATE" />
+		<result property="accordingStation" column="ACCORDINGSTATION" />
+		<result property="accordingLevel" column="ACCORDINGLEVEL" />
+		<result property="accordingRank" column="ACCORDINGRANK" />
+		<result property="marking" column="MARKING" />
+	</resultMap>
+	
+	<resultMap type="cn.microvideo.qsecurity.entity.PositionExtend" id="PositionExtendMap">
+		<id property="uniqueId" column="id" />
+		<result property="name" column="name" />
+		<result property="oid" column="oid" />
+		<result property="ouid" column="ouid" />
+		<result property="type" column="type" />
+		<result property="typeName" column="type_name" />
+		<result property="seq" column="seq" />
+		<result property="parent" column="parent" />
+		<result property="station" column="station" />
+		<result property="level" column="level" />
+		<result property="rank" column="rank" />
+		<result property="template" column="TEMPLATE" />
+		<result property="accordingStation" column="ACCORDINGSTATION" />
+		<result property="accordingLevel" column="ACCORDINGLEVEL" />
+		<result property="accordingRank" column="ACCORDINGRANK" />
+		<result property="marking" column="MARKING" />
+	</resultMap>
+
+	<sql id="OP_Column">
+		ID,ORGANIZATIONID,POSITIONID
+	</sql>
+
+	<sql id="OP_Column_op">
+		op.ID,op.ORGANIZATIONID,op.POSITIONID
+	</sql>
+	<sql id="sql_column_uoposition">
+		ID, UUID, OID, POSITIONID
+	</sql>
+
+	<sql id="sql_column_position_p">
+		p.id,p.name,p.oid,p.ouid,p.type,p.seq,p.parent,p.station,p.level,p.rank,p.TEMPLATE,p.ACCORDINGSTATION,p.ACCORDINGLEVEL,p.ACCORDINGRANK,p.MARKING
+	</sql>
+
+	<insert id="insertOP" parameterType="OrganizationPosition"
+		flushCache="true">
+		<![CDATA[insert into t_qs_organization_position(ID,ORGANIZATIONID,POSITIONID)
+		values(#{id},#{organizationId},#{positionId})]]>
+	</insert>
+
+	<delete id="deleteOPByOidAndPid" parameterType="String"
+		flushCache="true">
+		<![CDATA[delete from t_qs_organization_position where ORGANIZATIONID=#{oid} and POSITIONID=#{pid}]]>
+	</delete>
+
+	<select id="selectOPByOrgId" parameterType="String"
+		resultMap="organizationPositionMap">
+		<![CDATA[ select ]]>
+		<include refid="OP_Column"></include>
+		from t_qs_organization_position where organizationId=#{orgId}
+	</select>
+	<insert id="insertUOPosition" parameterType="UserOrgPosition"
+		flushCache="true">
+		<![CDATA[insert into T_QS_USER_ORGANIZATION_POSITION (ID, UUID, OID,POSITIONID)
+		 values (#{uniqueId},#{userUuid},#{orgId},#{positionId})]]>
+	</insert>
+
+	<select id="selectUOPositionByUuidOid" parameterType="java.lang.String"
+		resultMap="UserOrgPositionMap">
+		<![CDATA[ select ]]>
+		<include refid="sql_column_uoposition"></include>
+		<![CDATA[ from T_QS_USER_ORGANIZATION_POSITION where	UUID=#{uuid,jdbcType=VARCHAR}]]>
+		<if test="oid != null and oid != ''">
+			and OID=#{oid,jdbcType=VARCHAR}
+		</if>
+		<!-- ouid 部门唯一id 杜静增加 20170719 -->
+		<if test="ouid != null and ouid != ''">
+			and OUID=#{ouid,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<delete id="deleteUOPositionById" parameterType="String"
+		flushCache="true">
+		<![CDATA[delete from T_QS_USER_ORGANIZATION_POSITION where id=#{id}]]>
+	</delete>
+
+	<delete id="deleteUOPositionByUuidOidOuid" parameterType="java.lang.String"
+		flushCache="true">
+		<![CDATA[delete from T_QS_USER_ORGANIZATION_POSITION where UUID=#{uuid,jdbcType=VARCHAR} 
+		and OID=#{oid,jdbcType=VARCHAR} and	OUID=#{ouid}]]>
+	</delete>
+
+	<!-- 最后去除 limit 2 杜静 20170623 -->
+	<select id="selectPositionByUuid" parameterType="java.lang.String"
+		resultMap="PositionMap">
+		<![CDATA[ select ]]>
+		<include refid="sql_column_position_p"></include>
+		<![CDATA[ from T_QS_POSITION${template_suffix} p, T_QS_USER_ORGANIZATION_POSITION uop
+		where uop.UUID =#{uuid,jdbcType=VARCHAR} AND p.ID=uop.POSITIONID]]>
+	</select>
+
+	<select id="selectUOPositionByOidPid" parameterType="java.lang.String"
+		resultMap="UserOrgPositionMap">
+		<![CDATA[ select ]]>
+		<include refid="sql_column_uoposition"></include>
+		<![CDATA[ from T_QS_USER_ORGANIZATION_POSITION where 1=1]]>
+		<!-- 增加空判断 杜静 20170724 -->
+		<if test="oid != null and oid != ''">
+			and OID=#{oid,jdbcType=VARCHAR}
+		</if>
+		<if test="pid != null and pid != ''">
+			and POSITIONID=#{pid,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<insert id="insertUOPBatch" parameterType="java.util.List"
+		flushCache="true">
+		<![CDATA[insert into T_QS_USER_ORGANIZATION_POSITION (ID,UUID,OID,POSITIONID,OUID)]]>
+		<foreach collection="userOrgPositionList" item="item" index="index"
+			separator="union">
+			<![CDATA[select #{item.uniqueId},#{item.userUuid},#{item.orgId},#{item.positionId},#{item.ouid} from dual]]>
+		</foreach>
+	</insert>
+
+	<delete id="delOUPByOidAndPid" parameterType="String"
+		flushCache="true">
+		<![CDATA[delete from T_QS_USER_ORGANIZATION_POSITION where 1=1 ]]>
+		<!-- 增加空判断 杜静 20170724 -->
+		<if test="oid != null and oid != ''">
+			and OID=#{oid,jdbcType=VARCHAR}
+		</if>
+		<if test="pid != null and pid != ''">
+			and POSITIONID=#{pid,jdbcType=VARCHAR}
+		</if>
+	</delete>
+
+	<select id="selectPByUuidAndOidOrOuid" parameterType="java.lang.String"
+		resultMap="PositionMap">
+		<![CDATA[select ]]>
+		<include refid="sql_column_position_p"></include>
+		<![CDATA[ from t_qs_user_organization_position uop,T_QS_POSITION${template_suffix} p
+		where uop.POSITIONID = p.ID and uop.UUID=#{uuid,jdbcType=VARCHAR}]]>
+		<if test="oid != null and oid != ''">
+			and uop.OID=#{oid,jdbcType=VARCHAR}
+		</if>
+		<if test="ouid != null and ouid != ''">
+			and uop.OUID=#{ouid,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<!-- 返回值增加type和seq 杜静 20170901 -->
+	<select id="selectPositionByUuid_v1" parameterType="java.lang.String"
+		resultMap="PositionMap">
+		<![CDATA[select uop.OUID as ouid,uop.POSITIONID as id,p.`NAME` as name,p.type,p.seq 
+		from t_qs_user_organization_position uop,T_QS_POSITION${template_suffix} p where uop.UUID =#{uuid,jdbcType=VARCHAR} AND
+		p.ID=uop.POSITIONID order by uop.ouid,p.SEQ]]>
+	</select>
+
+	<delete id="deleteNotUOPositionByUuid" parameterType="java.lang.String"
+		flushCache="true">
+		<![CDATA[delete from t_qs_user_organization_position where uuid = #{uuid,jdbcType=VARCHAR}
+		and ouid not in( select ouid from t_qs_user_organization where uuid = #{uuid,jdbcType=VARCHAR})]]>
+	</delete>
+
+	<delete id="deleteUOPositionByUuid" parameterType="java.lang.String"
+		flushCache="true">
+		<![CDATA[delete from t_qs_user_organization_position where uuid = #{uuid,jdbcType=VARCHAR}]]>
+	</delete>
+
+	<select id="selectPidsByOrgIdAndPtId" parameterType="java.lang.String"
+		resultMap="organizationPositionMap">
+		<![CDATA[select ]]>
+		<include refid="OP_Column_op"></include>
+		<![CDATA[from t_qs_organization_position op,T_QS_POSITION${template_suffix} p where
+		op.ORGANIZATIONID=#{orgId} and op.POSITIONID = p.ID and p.TEMPLATE = #{ptId}]]>
+	</select>
+
+	<delete id="deleteUOPositionByOid" parameterType="java.lang.String"
+		flushCache="true">
+		<![CDATA[delete from t_qs_user_organization_position where OID=#{oid}]]>
+		<if test="isOnlyMP != null and isOnlyMP != ''">
+			<![CDATA[and POSITIONID in(select ID from T_QS_POSITION${template_suffix} where LENGTH(TEMPLATE) > 0
+			UNION select ID from T_QS_POSITION${template_suffix} where type ='p')]]>
+		</if>
+	</delete>
+
+	<delete id="deleteUOPositionByOuids" parameterType="Map"
+		flushCache="true">
+		<![CDATA[delete from t_qs_user_organization_position where OUID in]]>
+		<foreach collection="ouids" item="item" index="index"
+			separator="," open="(" close=")">
+			#{item}
+		</foreach>
+		<if test="isOnlyMP != null and isOnlyMP != ''">
+			<![CDATA[ and POSITIONID in(select ID from T_QS_POSITION${template_suffix} where
+			LENGTH(TEMPLATE) > 0 UNION select ID from T_QS_POSITION${template_suffix} where type ='p')]]>
+		</if>
+	</delete>
+
+	<!-- (仅删除模版岗位和type=p的岗位) 杜静 20170803 -->
+	<delete id="deleteOPByOid" parameterType="String" flushCache="true">
+		<![CDATA[delete from t_qs_organization_position where
+		ORGANIZATIONID=#{oid} and POSITIONID in(select ID from T_QS_POSITION${template_suffix} where LENGTH(TEMPLATE) > 0
+		UNION select ID from T_QS_POSITION${template_suffix} where type ='p')]]>
+	</delete>
+
+	<update id="updateUOPByUuidAndOuid" parameterType="String"
+		flushCache="true">
+		<![CDATA[update t_qs_user_organization_position set OUID=#{newOuid}
+		where uuid=#{uuid} and OUID=#{oldOuid}]]>
+	</update>
+
+	<delete id="deleteUOPositionByUuidList" parameterType="java.util.List"
+		flushCache="true">
+		<![CDATA[delete from t_qs_user_organization_position where uuid in]]>
+		<foreach separator="," index="index" item="item" collection="uuidList"
+			close=")" open="(">
+			#{item,jdbcType=VARCHAR}
+		</foreach>
+	</delete>
+
+	<update id="updateUOPByOUList" parameterType="Map"
+		flushCache="true">
+		<if test="ouList != null and ouList.size() > 0">
+			<![CDATA[update t_qs_user_organization_position set OID=#{oid,jdbcType=VARCHAR} where OUID in ]]>
+			<foreach separator="," index="index" item="item" collection="ouList"
+				close=")" open="(">
+				#{item.id,jdbcType=VARCHAR}
+			</foreach>
+		</if>
+	</update>
+	
+	<!-- 根据单位id 查询单位关联的岗位信息 -->
+	<select id="queryPositionDataByOid" resultMap="PositionExtendMap">
+		select distinct  tqp.id,tqp.name,tqp.type,ifnull(tqpt.name,tqt.NAME) type_name,tqp.seq,tqp.TEMPLATE
+		from t_qs_position tqp 
+		left join t_qs_position_type tqpt on tqpt.code =tqp.`TYPE` or (tqp.`TYPE`='pt' and tqpt.code='p')
+		left join t_qs_template tqt on tqp.TEMPLATE =tqt.ID and tqp.`TYPE` =tqt.POSITIONTYPE 
+		where tqp.ID in (select POSITIONID from t_qs_organization_position where ORGANIZATIONID=#{oid})
+		order by tqp.`TYPE` ,tqp.SEQ 
+	</select>
+	
+	<!-- 根据根据岗位id 查询人员列表 -->
+	<select id="queryUserListByPositionId" resultMap="cn.microvideo.qsecurity.dao.UserDao.UserMap">
+		select <include refid="cn.microvideo.qsecurity.dao.UserDao.sql_column_user_u"/> 
+		from t_qs_user u
+		inner join t_qs_user_organization_position up on  up.uuid=u.UUIDS 
+		where POSITIONID =#{positionId} 
+		<if test="oid !=null and oid !=''">
+			and ouid in (
+				select o.id from t_qs_organization o
+				inner join t_qs_organization o1 on o.OCODE like concat(o1.OCODE,'%') where o1.id=#{oid}
+			)
+		</if>
+		
+	</select>
+
+</mapper>
